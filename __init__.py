@@ -22,9 +22,11 @@ scriptLocation = documentsDir / 'maya' / 'scripts' / 'IK_Switcher'
 sys.path.append(str(scriptLocation))
 
 import UI
+import Switcher
 
 import importlib
 
 importlib.reload(UI)
+importlib.reload(Switcher)
 
 UI.createUI()

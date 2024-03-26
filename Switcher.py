@@ -20,6 +20,11 @@ importlib.reload(utils)
 #Name Collection Function#
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+def rotateObjectByAmount(amount, axis):
+    currentSelection = mc.ls(selection=True)
+    currentRotation = mc.getAttr(currentSelection[0] + '.rotate' + axis)
+    mc.setAttr(currentSelection[0] + '.rotate' + axis, currentRotation + amount)
+
 def confirm_prompt():
     """Function to display a confirmation dialog."""
     result = mc.confirmDialog(
