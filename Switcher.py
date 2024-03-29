@@ -20,6 +20,14 @@ importlib.reload(utils)
 #Name Collection Function#
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+def mirrorInit(direction):
+    if direction == 'l2r':
+        mirrorL2R()
+    elif direction == 'r2l':
+        mirrorR2L()
+
+
+
 def rotateObjectByAmount(amount, axis):
     currentSelection = mc.ls(selection=True)
     currentRotation = mc.getAttr(currentSelection[0] + '.rotate' + axis)
@@ -360,170 +368,173 @@ def mirrorL2R():
     #Loop to run on all of the objects in order to mirror values 
     
     for obj in sele:    
-    
-        path = str(mc.listRelatives(sele[index], f = True))
-        
-        if "Instruments" in path:
-        
-            #store the side that should have it's tool turned on
-            if "Right" in path:
-                handSide = "Right"
-                otherHandSide = "Left"
-        
-            else:
-                handSide = "Left"
-                otherHandSide = "Right"
+        if 'Ctrl_Global_Hands_01' not in obj:
+            path = str(mc.listRelatives(sele[index], f = True))
             
-            #split the namespace and the object name for objects in selection
-            if ":" in obj:
-                nameSpace = (obj.split(":")[0] + ':')
-                sansNameSpace = obj.split(":")[1]
-            else:
-                nameSpace = ""
-                sansNameSpace = str(obj)
+            if "Instruments" in path:
             
-            #Turn on the tool on the other side of the rig
-            toolAttr = mc.getAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide)) 
-            print('toolattr: ', toolAttr)
-            mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(otherHandSide), toolAttr)
+                #store the side that should have it's tool turned on
+                if "Right" in path:
+                    handSide = "Right"
+                    otherHandSide = "Left"
             
-            #get the tool that will receive the mirrored values and store it in a variable using this function
-            fromTool = toolDirectory.ToolDict.get_controller(toolAttr, side=handSide)
-            toTool = toolDirectory.ToolDict.get_controller(toolAttr, side=otherHandSide)
-           
-            #Mirror the values
-            locator = mc.spaceLocator()
-            locGrp = mc.group(locator)
-            mc.matchTransform(locator, fromTool)
-            grpAttr = mc.getAttr(locGrp + '.sx')
-            mc.setAttr(locGrp + '.sx', (grpAttr * -1))
-            mc.parent(locator, w = True)
-            mc.matchTransform(toTool, locator)
-            rotX = mc.getAttr(toTool + '.rx')
-            mc.setAttr(toTool + '.rx', rotX - 180)
-            mc.delete(locator)
-            mc.delete(locGrp)
-            mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide), 0)
-            
-            index += 1    
+                else:
+                    handSide = "Left"
+                    otherHandSide = "Right"
                 
-        else:        
-        
-            #Store the values to be mirrored
-            if mc.getAttr(obj + '.tx', k = True, l = False):
-                tranX = mc.getAttr(sele[index] + '.tx')
-            if mc.getAttr(obj + '.ty', k = True, l = False):
-                tranY = mc.getAttr(sele[index] + '.ty')
-            if mc.getAttr(obj + '.tz', k = True, l = False):
-                tranZ = mc.getAttr(sele[index] + '.tz')
-            if mc.getAttr(obj + '.rx', k = True, l = False):
-                rotX = mc.getAttr(sele[index] + '.rx')
-            if mc.getAttr(obj + '.ry', k = True, l = False):
-                rotY = mc.getAttr(sele[index] + '.ry')
-            if mc.getAttr(obj + '.rz', k = True, l = False):
-                rotZ = mc.getAttr(sele[index] + '.rz')
+                #split the namespace and the object name for objects in selection
+                if ":" in obj:
+                    nameSpace = (obj.split(":")[0] + ':')
+                    sansNameSpace = obj.split(":")[1]
+                else:
+                    nameSpace = ""
+                    sansNameSpace = str(obj)
                 
-            #create variables for identifiers
-            r = "_R_"
-            l = "_L_"
-            
-            #split the namespace and the object name for objects in selection
-            
-            if ":" in obj:
-                nameSpace = (obj.split(":")[0] + ':')
-                sansNameSpace = obj.split(":")[1]
-            else:
-                nameSpace = ""
-                sansNameSpace = str(obj)
-            
-            #divide the object names to reuse in mirroring process with identifier variable
-            name1 = sansNameSpace.split(l)[0]
-            name2 = sansNameSpace.split(l)[1]
-            
-            #concatenate and store the name of the object that will be receiving the mirrored values
-            fullName = nameSpace + ":" + name1 + r + name2
-            
-            #concatenate the object name with the attribute that will be receiving the mirrored values
-            if mc.getAttr(obj + '.tx', k = True, l = False):
-                nameTX = fullName + '.tx'
-            if mc.getAttr(obj + '.ty', k = True, l = False):
-                nameTY = fullName + '.ty'
-            if mc.getAttr(obj + '.tz', k = True, l = False):
-                nameTZ = fullName + '.tz'
-            if mc.getAttr(obj + '.rx', k = True, l = False):
-                nameRX = fullName + '.rx'
-            if mc.getAttr(obj + '.ry', k = True, l = False):
-                nameRY = fullName + '.ry'
-            if mc.getAttr(obj + '.rz', k = True, l = False):
-                nameRZ = fullName + '.rz'
-            
-            #determine the type of controller that's being assigned, in order to determine how to mirror values
-            if "ForeArm" in fullName:
-                multTX = -1
-                multTY = 1
-                multTZ = 1
-                multRX = 1
-                multRY = -1
-                multRZ = -1
+                #Turn on the tool on the other side of the rig
+                toolAttr = mc.getAttr(f'{nameSpace}Ctrl_Global_Hands_01.{handSide}HandTool') 
+                print('toolattr: ', toolAttr, 'for: ', obj)
+                mc.setAttr(f'{nameSpace}Ctrl_Global_Hands_01.{otherHandSide}HandTool', toolAttr)
+                print('toolattr: ', toolAttr, 'for: ', obj)
+
                 
-            elif "Wrist" in fullName:
-                multTX = -1
-                multTY = 1
-                multTZ = 1
-                multRX = 1
-                multRY = -1
-                multRZ = -1
                 
-            elif "Carpal_A" in fullName:
-                multTX = 1
-                multTY = -1
-                multTZ = 1
-                multRX = -1
-                multRY = 1
-                multRZ = -1
+                #get the tool that will receive the mirrored values and store it in a variable using this function
+                fromTool = toolDirectory.ToolDict.get_controller(toolAttr, side=handSide)
+                toTool = toolDirectory.ToolDict.get_controller(toolAttr, side=otherHandSide)
             
-            elif "Carpal_B" in fullName:
-                multTX = 1
-                multTY = 1
-                multTZ = -1
-                multRX = -1
-                multRY = -1
-                multRZ = 1
+                #Mirror the values
+                locator = mc.spaceLocator()
+                locGrp = mc.group(locator)
+                mc.matchTransform(locator, fromTool)
+                grpAttr = mc.getAttr(locGrp + '.sx')
+                mc.setAttr(locGrp + '.sx', (grpAttr * -1))
+                mc.parent(locator, w = True)
+                mc.matchTransform(toTool, locator)
+                rotX = mc.getAttr(toTool + '.rx')
+                mc.setAttr(toTool + '.rx', rotX - 180)
+                mc.delete(locator)
+                mc.delete(locGrp)
+                mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide), 0)
                 
-            elif "Carpal_C" in fullName:
-                multTX = 1
-                multTY = 1
-                multTZ = -1
-                multRX = -1
-                multRY = -1
-                multRZ = 1
-                
-            elif "Thumb" in fullName:
-                multRX = -1
-                multRY = 1
-                multRZ = -1
-                
-            else:
-                multRX = -1
-                multRY = -1
-                multRZ = 1
-                 
+                index += 1    
+                    
+            else:        
             
-            #set the mirrored values to the receiving objects
-            if mc.getAttr(obj + '.tx', k = True, l = False):
-                mc.setAttr(nameTX, (tranX * multTX))
-            if mc.getAttr(obj + '.ty', k = True, l = False):
-                mc.setAttr(nameTY, (tranY * multTY))
-            if mc.getAttr(obj + '.tz', k = True, l = False):
-                mc.setAttr(nameTZ, (tranZ * multTZ))
-            if mc.getAttr(obj + '.rx', k = True, l = False):
-                mc.setAttr(nameRX, (rotX * multRX))
-            if mc.getAttr(obj + '.ry', k = True, l = False):
-                mc.setAttr(nameRY, (rotY * multRY))
-            if mc.getAttr(obj + '.rz', k = True, l = False):
-                mc.setAttr(nameRZ, (rotZ * multRZ))
+                #Store the values to be mirrored
+                if mc.getAttr(obj + '.tx', k = True, l = False):
+                    tranX = mc.getAttr(sele[index] + '.tx')
+                if mc.getAttr(obj + '.ty', k = True, l = False):
+                    tranY = mc.getAttr(sele[index] + '.ty')
+                if mc.getAttr(obj + '.tz', k = True, l = False):
+                    tranZ = mc.getAttr(sele[index] + '.tz')
+                if mc.getAttr(obj + '.rx', k = True, l = False):
+                    rotX = mc.getAttr(sele[index] + '.rx')
+                if mc.getAttr(obj + '.ry', k = True, l = False):
+                    rotY = mc.getAttr(sele[index] + '.ry')
+                if mc.getAttr(obj + '.rz', k = True, l = False):
+                    rotZ = mc.getAttr(sele[index] + '.rz')
+                    
+                #create variables for identifiers
+                r = "_R_"
+                l = "_L_"
                 
-            index += 1
+                #split the namespace and the object name for objects in selection
+                
+                if ":" in obj:
+                    nameSpace = (obj.split(":")[0] + ':')
+                    sansNameSpace = obj.split(":")[1]
+                else:
+                    nameSpace = ""
+                    sansNameSpace = str(obj)
+                
+                #divide the object names to reuse in mirroring process with identifier variable
+                name1 = sansNameSpace.split(l)[0]
+                name2 = sansNameSpace.split(l)[1]
+                
+                #concatenate and store the name of the object that will be receiving the mirrored values
+                fullName = nameSpace + ":" + name1 + r + name2
+                
+                #concatenate the object name with the attribute that will be receiving the mirrored values
+                if mc.getAttr(obj + '.tx', k = True, l = False):
+                    nameTX = fullName + '.tx'
+                if mc.getAttr(obj + '.ty', k = True, l = False):
+                    nameTY = fullName + '.ty'
+                if mc.getAttr(obj + '.tz', k = True, l = False):
+                    nameTZ = fullName + '.tz'
+                if mc.getAttr(obj + '.rx', k = True, l = False):
+                    nameRX = fullName + '.rx'
+                if mc.getAttr(obj + '.ry', k = True, l = False):
+                    nameRY = fullName + '.ry'
+                if mc.getAttr(obj + '.rz', k = True, l = False):
+                    nameRZ = fullName + '.rz'
+                
+                #determine the type of controller that's being assigned, in order to determine how to mirror values
+                if "ForeArm" in fullName:
+                    multTX = -1
+                    multTY = 1
+                    multTZ = 1
+                    multRX = 1
+                    multRY = -1
+                    multRZ = -1
+                    
+                elif "Wrist" in fullName:
+                    multTX = -1
+                    multTY = 1
+                    multTZ = 1
+                    multRX = 1
+                    multRY = -1
+                    multRZ = -1
+                    
+                elif "Carpal_A" in fullName:
+                    multTX = 1
+                    multTY = -1
+                    multTZ = 1
+                    multRX = -1
+                    multRY = 1
+                    multRZ = -1
+                
+                elif "Carpal_B" in fullName:
+                    multTX = 1
+                    multTY = 1
+                    multTZ = -1
+                    multRX = -1
+                    multRY = -1
+                    multRZ = 1
+                    
+                elif "Carpal_C" in fullName:
+                    multTX = 1
+                    multTY = 1
+                    multTZ = -1
+                    multRX = -1
+                    multRY = -1
+                    multRZ = 1
+                    
+                elif "Thumb" in fullName:
+                    multRX = -1
+                    multRY = 1
+                    multRZ = -1
+                    
+                else:
+                    multRX = -1
+                    multRY = -1
+                    multRZ = 1
+                    
+                
+                #set the mirrored values to the receiving objects
+                if mc.getAttr(obj + '.tx', k = True, l = False):
+                    mc.setAttr(nameTX, (tranX * multTX))
+                if mc.getAttr(obj + '.ty', k = True, l = False):
+                    mc.setAttr(nameTY, (tranY * multTY))
+                if mc.getAttr(obj + '.tz', k = True, l = False):
+                    mc.setAttr(nameTZ, (tranZ * multTZ))
+                if mc.getAttr(obj + '.rx', k = True, l = False):
+                    mc.setAttr(nameRX, (rotX * multRX))
+                if mc.getAttr(obj + '.ry', k = True, l = False):
+                    mc.setAttr(nameRY, (rotY * multRY))
+                if mc.getAttr(obj + '.rz', k = True, l = False):
+                    mc.setAttr(nameRZ, (rotZ * multRZ))
+                    
+                index += 1  
 
 
 
@@ -551,172 +562,172 @@ def mirrorR2L():
     #Loop to run on all of the objects in order to mirror values 
     
     for obj in sele:    
-    
-        path = str(mc.listRelatives(sele[index], f = True))
-        print('path: ', path)
-        if "Instruments" in path:
+        if 'Ctrl_Global_Hands_01' not in obj:
+            path = str(mc.listRelatives(sele[index], f = True))
+            print('path: ', path)
+            if "Instruments" in path:
 
-            #store the side that should have it's tool turned on
-            if "Right" in path:
-                handSide = "Right"
-                otherHandSide = "Left"
-        
-            else:
-                handSide = "Left"
-                otherHandSide = "Right"
+                #store the side that should have it's tool turned on
+                if "Right" in path:
+                    handSide = "Right"
+                    otherHandSide = "Left"
             
-            #split the namespace and the object name for objects in selection
-            if ":" in obj:
-                nameSpace = (obj.split(":")[0] + ':')
-                sansNameSpace = obj.split(":")[1]
-            else:
-                nameSpace = ""
-                sansNameSpace = obj[0]
-            
-            #Turn on the tool on the other side of the rig
-            toolAttr = mc.getAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide)) 
-            print('toolattr: ', toolAttr)
-            toolCtrl = toolDirectory.ToolDict.get_controller(toolAttr)
-            print('toolCtrl: ', toolCtrl)
-            mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(otherHandSide), toolAttr)
-            
-            print(handSide)
-            #get the tool that will receive the mirrored values and store it in a variable using this function
-            fromTool = toolDirectory.ToolDict.get_controller(toolAttr, side=handSide)
-            toTool = toolDirectory.ToolDict.get_controller(toolAttr, side=otherHandSide)
-           
-            #Mirror the values
-            locator = mc.spaceLocator()
-            locGrp = mc.group(locator)
-            mc.matchTransform(locator, fromTool)
-            grpAttr = mc.getAttr(locGrp + '.sx')
-            mc.setAttr(locGrp + '.sx', (grpAttr * -1))
-            mc.parent(locator, w = True)
-            mc.matchTransform(toTool, locator)
-            rotX = mc.getAttr(toTool + '.rx')
-            mc.setAttr(toTool + '.rx', rotX - 180)
-            mc.delete(locator)
-            mc.delete(locGrp)
-            mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide), 0)
-            if mc.getAttr(toTool + '.sx') <= 0:
-                mc.setAttr(toTool + '.sx', 1)
-            if mc.getAttr(toTool + '.sy') <= 0:
-                mc.setAttr(toTool + '.sy', 1)
-            if mc.getAttr(toTool + '.sz') <= 0:
-                mc.setAttr(toTool + '.sz', 1)
-            index += 1    
+                else:
+                    handSide = "Left"
+                    otherHandSide = "Right"
                 
-        else:        
-            
-            #Store the values to be mirrored
-            if mc.getAttr(obj + '.tx', k = True, l = False):
-                tranX = mc.getAttr(sele[index] + '.tx')
-            if mc.getAttr(obj + '.ty', k = True, l = False):
-                tranY = mc.getAttr(sele[index] + '.ty')
-            if mc.getAttr(obj + '.tz', k = True, l = False):
-                tranZ = mc.getAttr(sele[index] + '.tz')
-            if mc.getAttr(obj + '.rx', k = True, l = False):
-                rotX = mc.getAttr(sele[index] + '.rx')
-            if mc.getAttr(obj + '.ry', k = True, l = False):
-                rotY = mc.getAttr(sele[index] + '.ry')
-            if mc.getAttr(obj + '.rz', k = True, l = False):
-                rotZ = mc.getAttr(sele[index] + '.rz')
-            
-            #create variables for identifiers
-            r = "_R_"
-            l = "_L_"
-            
-            #split the namespace and the object name for objects in selection
-            if ":" in obj:
-                nameSpace = (obj.split(":")[0] + ':')
-                sansNameSpace = obj.split(":")[1]
-            else:
-                nameSpace = ""
-                sansNameSpace = str(obj)
-            #divide the object names to reuse in mirroring process with identifier variable
-            name1 = sansNameSpace.split(r)[0]
-            name2 = sansNameSpace.split(r)[1]
-            
-            #concatenate and store the name of the object that will be receiving the mirrored values
-            fullName = nameSpace + ":" + name1 + l + name2
-            
-            #concatenate the object name with the attribute that will be receiving the mirrored values
-            if mc.getAttr(obj + '.tx', k = True, l = False):
-                nameTX = fullName + '.tx'
-            if mc.getAttr(obj + '.ty', k = True, l = False):
-                nameTY = fullName + '.ty'
-            if mc.getAttr(obj + '.tz', k = True, l = False):
-                nameTZ = fullName + '.tz'
-            if mc.getAttr(obj + '.rx', k = True, l = False):
-                nameRX = fullName + '.rx'
-            if mc.getAttr(obj + '.ry', k = True, l = False):
-                nameRY = fullName + '.ry'
-            if mc.getAttr(obj + '.rz', k = True, l = False):
-                nameRZ = fullName + '.rz'
-            
-            #determine the type of controller that's being assigned, in order to determine how to mirror values
-            if "ForeArm" in fullName:
-                multTX = -1
-                multTY = 1
-                multTZ = 1
-                multRX = 1
-                multRY = -1
-                multRZ = -1
+                #split the namespace and the object name for objects in selection
+                if ":" in obj:
+                    nameSpace = (obj.split(":")[0] + ':')
+                    sansNameSpace = obj.split(":")[1]
+                else:
+                    nameSpace = ""
+                    sansNameSpace = obj[0]
                 
-            elif "Wrist" in fullName:
-                multRX = 1
-                multRY = -1
-                multRZ = -1
+                #Turn on the tool on the other side of the rig
+                toolAttr = mc.getAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide)) 
+                print('toolattr: ', toolAttr)
+                toolCtrl = toolDirectory.ToolDict.get_controller(toolAttr)
+                print('toolCtrl: ', toolCtrl)
+                mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(otherHandSide), toolAttr)
                 
-            elif "Carpal_A" in fullName:
-                multTX = 1
-                multTY = -1
-                multTZ = 1
-                multRX = -1
-                multRY = 1
-                multRZ = -1
+                print(handSide)
+                #get the tool that will receive the mirrored values and store it in a variable using this function
+                fromTool = toolDirectory.ToolDict.get_controller(toolAttr, side=handSide)
+                toTool = toolDirectory.ToolDict.get_controller(toolAttr, side=otherHandSide)
             
-            elif "Carpal_B" in fullName:
-                multTX = 1
-                multTY = 1
-                multTZ = -1
-                multRX = -1
-                multRY = -1
-                multRZ = 1
+                #Mirror the values
+                locator = mc.spaceLocator()
+                locGrp = mc.group(locator)
+                mc.matchTransform(locator, fromTool)
+                grpAttr = mc.getAttr(locGrp + '.sx')
+                mc.setAttr(locGrp + '.sx', (grpAttr * -1))
+                mc.parent(locator, w = True)
+                mc.matchTransform(toTool, locator)
+                rotX = mc.getAttr(toTool + '.rx')
+                mc.setAttr(toTool + '.rx', rotX - 180)
+                mc.delete(locator)
+                mc.delete(locGrp)
+                mc.setAttr(nameSpace + 'Ctrl_Global_Hands_01' + ".%sHandTool" %(handSide), 0)
+                if mc.getAttr(toTool + '.sx') <= 0:
+                    mc.setAttr(toTool + '.sx', 1)
+                if mc.getAttr(toTool + '.sy') <= 0:
+                    mc.setAttr(toTool + '.sy', 1)
+                if mc.getAttr(toTool + '.sz') <= 0:
+                    mc.setAttr(toTool + '.sz', 1)
+                index += 1    
+                    
+            else:        
                 
-            elif "Carpal_C" in fullName:
-                multTX = 1
-                multTY = 1
-                multTZ = -1
-                multRX = -1
-                multRY = -1
-                multRZ = 1
+                #Store the values to be mirrored
+                if mc.getAttr(obj + '.tx', k = True, l = False):
+                    tranX = mc.getAttr(sele[index] + '.tx')
+                if mc.getAttr(obj + '.ty', k = True, l = False):
+                    tranY = mc.getAttr(sele[index] + '.ty')
+                if mc.getAttr(obj + '.tz', k = True, l = False):
+                    tranZ = mc.getAttr(sele[index] + '.tz')
+                if mc.getAttr(obj + '.rx', k = True, l = False):
+                    rotX = mc.getAttr(sele[index] + '.rx')
+                if mc.getAttr(obj + '.ry', k = True, l = False):
+                    rotY = mc.getAttr(sele[index] + '.ry')
+                if mc.getAttr(obj + '.rz', k = True, l = False):
+                    rotZ = mc.getAttr(sele[index] + '.rz')
                 
-            elif "Thumb" in fullName:
-                multRX = -1
-                multRY = 1
-                multRZ = -1
+                #create variables for identifiers
+                r = "_R_"
+                l = "_L_"
                 
-            else:
-                multRX = -1
-                multRY = -1
-                multRZ = 1
-                 
-            
-            #set the mirrored values to the receiving objects
-            if mc.getAttr(obj + '.tx', k = True, l = False):
-                mc.setAttr(nameTX, (tranX * multTX))
-            if mc.getAttr(obj + '.ty', k = True, l = False):
-                mc.setAttr(nameTY, (tranY * multTY))
-            if mc.getAttr(obj + '.tz', k = True, l = False):
-                mc.setAttr(nameTZ, (tranZ * multTZ))
-            if mc.getAttr(obj + '.rx', k = True, l = False):
-                mc.setAttr(nameRX, (rotX * multRX))
-            if mc.getAttr(obj + '.ry', k = True, l = False):
-                mc.setAttr(nameRY, (rotY * multRY))
-            if mc.getAttr(obj + '.rz', k = True, l = False):
-                mc.setAttr(nameRZ, (rotZ * multRZ))
-            
-            
+                #split the namespace and the object name for objects in selection
+                if ":" in obj:
+                    nameSpace = (obj.split(":")[0] + ':')
+                    sansNameSpace = obj.split(":")[1]
+                else:
+                    nameSpace = ""
+                    sansNameSpace = str(obj)
+                #divide the object names to reuse in mirroring process with identifier variable
+                name1 = sansNameSpace.split(r)[0]
+                name2 = sansNameSpace.split(r)[1]
                 
-            index += 1
+                #concatenate and store the name of the object that will be receiving the mirrored values
+                fullName = nameSpace + ":" + name1 + l + name2
+                
+                #concatenate the object name with the attribute that will be receiving the mirrored values
+                if mc.getAttr(obj + '.tx', k = True, l = False):
+                    nameTX = fullName + '.tx'
+                if mc.getAttr(obj + '.ty', k = True, l = False):
+                    nameTY = fullName + '.ty'
+                if mc.getAttr(obj + '.tz', k = True, l = False):
+                    nameTZ = fullName + '.tz'
+                if mc.getAttr(obj + '.rx', k = True, l = False):
+                    nameRX = fullName + '.rx'
+                if mc.getAttr(obj + '.ry', k = True, l = False):
+                    nameRY = fullName + '.ry'
+                if mc.getAttr(obj + '.rz', k = True, l = False):
+                    nameRZ = fullName + '.rz'
+                
+                #determine the type of controller that's being assigned, in order to determine how to mirror values
+                if "ForeArm" in fullName:
+                    multTX = -1
+                    multTY = 1
+                    multTZ = 1
+                    multRX = 1
+                    multRY = -1
+                    multRZ = -1
+                    
+                elif "Wrist" in fullName:
+                    multRX = 1
+                    multRY = -1
+                    multRZ = -1
+                    
+                elif "Carpal_A" in fullName:
+                    multTX = 1
+                    multTY = -1
+                    multTZ = 1
+                    multRX = -1
+                    multRY = 1
+                    multRZ = -1
+                
+                elif "Carpal_B" in fullName:
+                    multTX = 1
+                    multTY = 1
+                    multTZ = -1
+                    multRX = -1
+                    multRY = -1
+                    multRZ = 1
+                    
+                elif "Carpal_C" in fullName:
+                    multTX = 1
+                    multTY = 1
+                    multTZ = -1
+                    multRX = -1
+                    multRY = -1
+                    multRZ = 1
+                    
+                elif "Thumb" in fullName:
+                    multRX = -1
+                    multRY = 1
+                    multRZ = -1
+                    
+                else:
+                    multRX = -1
+                    multRY = -1
+                    multRZ = 1
+                    
+                
+                #set the mirrored values to the receiving objects
+                if mc.getAttr(obj + '.tx', k = True, l = False):
+                    mc.setAttr(nameTX, (tranX * multTX))
+                if mc.getAttr(obj + '.ty', k = True, l = False):
+                    mc.setAttr(nameTY, (tranY * multTY))
+                if mc.getAttr(obj + '.tz', k = True, l = False):
+                    mc.setAttr(nameTZ, (tranZ * multTZ))
+                if mc.getAttr(obj + '.rx', k = True, l = False):
+                    mc.setAttr(nameRX, (rotX * multRX))
+                if mc.getAttr(obj + '.ry', k = True, l = False):
+                    mc.setAttr(nameRY, (rotY * multRY))
+                if mc.getAttr(obj + '.rz', k = True, l = False):
+                    mc.setAttr(nameRZ, (rotZ * multRZ))
+                
+                
+                    
+                index += 1

@@ -49,5 +49,5 @@ def createUI():
     mc.button(l='-90', c="Switcher.rotateObjectByAmount(-90, 'Z')", parent = zAxisLayout)
 
     mc.setParent(mainLayout)
-    mc.button(l = "Left -> Right", c = "Switcher.mirrorL2R()")
-    mc.button(l = "Right -> Left", c = "Switcher.mirrorR2L()")
+    mc.button(l = "Left -> Right", c = "Switcher.mirrorInit('l2r')")
+    mc.button(l = "Right -> Left", c = "Switcher.mirrorInit('r2l')")
